@@ -59,6 +59,19 @@ class Settings(BaseSettings):
     OPENAI_API_KEY: str = ""
     ANTHROPIC_API_KEY: str = ""
     
+    # External Job Sourcing (JSearch / RapidAPI)
+    RAPIDAPI_KEY: str = ""
+    JSEARCH_API_HOST: str = "jsearch.p.rapidapi.com"
+    JSEARCH_API_URL: str = "https://jsearch.p.rapidapi.com/search"
+    EXTERNAL_JOB_EXPIRY_DAYS: int = 14
+    DEFAULT_PH_SEARCH_QUERIES: List[str] = [
+        "Software Engineer Intern Philippines",
+        "Junior Web Developer Metro Manila",
+        "React Frontend Intern Philippines",
+        "Python Backend Developer Intern Philippines",
+        "IT OJT Trainee Metro Manila"
+    ]
+    
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

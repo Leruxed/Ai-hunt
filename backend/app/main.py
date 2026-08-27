@@ -5,7 +5,7 @@ from fastapi.responses import JSONResponse
 from app.core.config import settings
 from app.db.session import engine, Base
 from app.models import *  # Ensure all SQLAlchemy models are registered
-from app.api.v1 import auth, resumes, jobs, applications, matches
+from app.api.v1 import auth, resumes, jobs, applications, matches, external_jobs
 
 
 @asynccontextmanager
@@ -48,6 +48,7 @@ app.include_router(resumes.router, prefix=settings.API_V1_STR)
 app.include_router(jobs.router, prefix=settings.API_V1_STR)
 app.include_router(applications.router, prefix=settings.API_V1_STR)
 app.include_router(matches.router, prefix=settings.API_V1_STR)
+app.include_router(external_jobs.router, prefix=settings.API_V1_STR)
 
 
 @app.get("/health", tags=["Health"])
