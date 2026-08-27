@@ -12,7 +12,9 @@ from app.services.resume_parser.extractors import (
     FileValidationError,
     ExtractionError,
 )
-from app.services.resume_parser.skills_taxonomy import skills_normalizer, TAXONOMY
+from app.services.resume_parser.skills_taxonomy import skills_normalizer
+from app.services.resume_parser.field_extractor import llm_field_extractor
+from app.services.matching.embedding_service import embedding_service
 from app.services.storage.storage_service import storage_service
 
 router = APIRouter(prefix="/resumes", tags=["Resumes"])
@@ -28,13 +30,14 @@ async def upload_resume(
     Upload a resume (PDF or DOCX).
     1. Validates magic bytes (puremagic) and size (<5MB).
     2. Saves file to isolated storage with sanitized names.
-    3. Extracts text and runs skills normalization against taxonomy.
-    4. Records Resume entry in database and populates initial parsed_data.
+    3. Extracts text and executes LLM structured field extraction.
+    4. Generates 384-dimensional vector embedding.
+    5. Records Resume in database with status PARSED.
     """
     file_bytes = await file.read()
     filename = file.filename or "resume.pdf"
 
-    # Step 1: Validate and extract text
+    # Step 1: Validate and extract raw text
     try:
         raw_text, mime_type, file_ext = extract_document_text(file_bytes, filename)
     except FileValidationError as e:
@@ -60,27 +63,12 @@ async def upload_resume(
             detail=f"Failed to store resume file: {str(e)}"
         )
 
-    # Step 3: Fast-pass rule/taxonomy skill extraction from raw text
-    extracted_skills_raw = []
-    lower_text = raw_text.lower()
-    for skill_name, data in TAXONOMY.items():
-        if skill_name.lower() in lower_text:
-            extracted_skills_raw.append(skill_name)
-        else:
-            for alias in data.get("aliases", []):
-                if alias.lower() in lower_text:
-                    extracted_skills_raw.append(skill_name)
-                    break
+    # Step 3: LLM Structured Field Extraction with taxonomy normalization
+    parsed_data: ParsedResumeData = await llm_field_extractor.extract_fields(raw_text)
 
-    normalized_skills = skills_normalizer.normalize_skills_list(extracted_skills_raw)
-
-    initial_parsed_data = ParsedResumeData(
-        skills=normalized_skills,
-        education=[],
-        experience=[],
-        certifications=[],
-        summary=""
-    )
+    # Step 4: Generate 384-dimensional vector embedding
+    embedding_text = embedding_service.build_resume_text_representation(parsed_data.model_dump())
+    vector_embedding = embedding_service.generate_embedding(embedding_text)
 
     # Deactivate previous active resumes for this user
     db.query(Resume).filter(
@@ -96,14 +84,15 @@ async def upload_resume(
         mime_type=mime_type,
         file_size_bytes=len(file_bytes),
         raw_text=raw_text,
-        parsed_data=initial_parsed_data.model_dump(),
+        parsed_data=parsed_data.model_dump(),
+        embedding=vector_embedding,
         status=ResumeStatus.PARSED
     )
     db.add(resume)
     db.flush()
 
     # Populate ResumeSkill associations
-    for skill_name in normalized_skills:
+    for skill_name in parsed_data.skills:
         skill_record = db.query(Skill).filter(Skill.canonical_name == skill_name).first()
         if not skill_record:
             skill_record = Skill(
@@ -149,7 +138,7 @@ def update_resume_parsed_data(
 ):
     """
     Human-in-the-loop review and correction endpoint.
-    Allows the student to edit/add/remove extracted skills and education before activating for matching.
+    Updates parsed skills/fields and regenerates semantic vector embeddings.
     """
     resume = db.query(Resume).filter(
         Resume.id == resume_id,
@@ -163,6 +152,10 @@ def update_resume_parsed_data(
     update_in.parsed_data.skills = skills_normalizer.normalize_skills_list(update_in.parsed_data.skills)
     resume.parsed_data = update_in.parsed_data.model_dump()
     resume.status = update_in.status or ResumeStatus.ACTIVE
+
+    # Regenerate vector embedding from updated parsed data
+    embedding_text = embedding_service.build_resume_text_representation(resume.parsed_data)
+    resume.embedding = embedding_service.generate_embedding(embedding_text)
 
     # Update ResumeSkill records
     db.query(ResumeSkill).filter(ResumeSkill.resume_id == resume.id).delete()
@@ -191,10 +184,8 @@ def get_resume_file(
     current_user: User = Depends(get_current_user)
 ):
     """
-    Download resume file with strict authorization (students can only fetch their own files;
-    employers can fetch if the student applied to their posting).
+    Download resume file with strict authorization.
     """
-    # Enforce student self-access
     if current_user.role == "student" and current_user.id != user_id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied.")
 

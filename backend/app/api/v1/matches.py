@@ -6,7 +6,6 @@ from app.models.user import User
 from app.models.resume import Resume, ResumeStatus
 from app.models.job_posting import JobPosting, JobStatus
 from app.models.external_job import ExternalJob
-from app.models.match_score import MatchScore, TargetType
 from app.schemas.job import JobPostingResponse, ExternalJobResponse
 from app.schemas.match import RecommendationItem
 from app.services.matching.scorer import match_scorer
@@ -22,7 +21,7 @@ def get_job_recommendations(
 ):
     """
     Returns ranked, explainable job recommendations for the student's active resume.
-    Merges internal postings and external cached listings into a unified feed.
+    Uses hybrid scoring (taxonomy overlap + dense vector semantic similarity).
     """
     # Fetch active or latest parsed resume
     resume = db.query(Resume).filter(
@@ -36,6 +35,7 @@ def get_job_recommendations(
         )
 
     parsed_data = resume.parsed_data or {}
+    resume_embedding = resume.embedding
     recommendations: List[RecommendationItem] = []
 
     # 1. Score against internal active job postings
@@ -45,7 +45,9 @@ def get_job_recommendations(
             resume_parsed_data=parsed_data,
             required_skills=job.required_skills or [],
             job_description=job.description,
-            min_education_level=job.min_education_level
+            min_education_level=job.min_education_level,
+            resume_embedding=resume_embedding,
+            job_embedding=job.embedding
         )
 
         recommendations.append(
@@ -55,7 +57,7 @@ def get_job_recommendations(
                 experience_score=exp_score,
                 education_score=edu_score,
                 explanation=explanation,
-                target_type=TargetType.INTERNAL,
+                target_type="internal",
                 target=JobPostingResponse.model_validate(job)
             )
         )
@@ -67,7 +69,9 @@ def get_job_recommendations(
             resume_parsed_data=parsed_data,
             required_skills=ext_job.required_skills or [],
             job_description=ext_job.description_snippet or "",
-            min_education_level=None
+            min_education_level=None,
+            resume_embedding=resume_embedding,
+            job_embedding=ext_job.embedding
         )
 
         recommendations.append(
@@ -77,7 +81,7 @@ def get_job_recommendations(
                 experience_score=exp_score,
                 education_score=edu_score,
                 explanation=explanation,
-                target_type=TargetType.EXTERNAL,
+                target_type="external",
                 target=ExternalJobResponse.model_validate(ext_job)
             )
         )

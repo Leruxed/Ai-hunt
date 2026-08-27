@@ -8,6 +8,7 @@ from app.models.job_posting import JobPosting, JobStatus
 from app.models.external_job import ExternalJob
 from app.schemas.job import JobPostingCreate, JobPostingUpdate, JobPostingResponse, ExternalJobResponse
 from app.services.resume_parser.skills_taxonomy import skills_normalizer
+from app.services.matching.embedding_service import embedding_service
 
 router = APIRouter(prefix="/jobs", tags=["Jobs"])
 
@@ -20,11 +21,10 @@ def create_job_posting(
 ):
     """
     Employer creates a new job or internship posting.
-    Normalizes required skills to canonical taxonomy names.
+    Normalizes required skills and generates 384-dimensional dense vector embedding.
     """
     employer = db.query(EmployerProfile).filter(EmployerProfile.user_id == current_user.id).first()
     if not employer:
-        # Create profile on the fly if missing
         employer = EmployerProfile(user_id=current_user.id, company_name=current_user.full_name or "Company")
         db.add(employer)
         db.flush()
@@ -32,6 +32,15 @@ def create_job_posting(
     # Normalize required & preferred skills
     normalized_required = skills_normalizer.normalize_skills_list(job_in.required_skills)
     normalized_preferred = skills_normalizer.normalize_skills_list(job_in.preferred_skills or [])
+
+    # Generate vector embedding for semantic search
+    job_text = embedding_service.build_job_text_representation(
+        title=job_in.title,
+        description=job_in.description,
+        required_skills=normalized_required,
+        preferred_skills=normalized_preferred
+    )
+    vector_embedding = embedding_service.generate_embedding(job_text)
 
     posting = JobPosting(
         employer_id=employer.id,
@@ -43,6 +52,7 @@ def create_job_posting(
         required_skills=normalized_required,
         preferred_skills=normalized_preferred,
         min_education_level=job_in.min_education_level,
+        embedding=vector_embedding,
         status=JobStatus.ACTIVE,
         expires_at=job_in.expires_at
     )
