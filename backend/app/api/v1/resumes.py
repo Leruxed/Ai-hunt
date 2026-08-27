@@ -196,3 +196,32 @@ def get_resume_file(
         return FileResponse(path=file_path, filename=filename)
     except PermissionError:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
+
+
+@router.delete("/{resume_id}", status_code=status.HTTP_200_OK)
+async def delete_resume(
+    resume_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_student)
+):
+    """
+    Permanently delete a resume record and its physical document file from storage.
+    """
+    resume = db.query(Resume).filter(
+        Resume.id == resume_id,
+        Resume.user_id == current_user.id
+    ).first()
+
+    if not resume:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Resume not found")
+
+    # Delete physical file
+    if resume.file_url:
+        filename = resume.file_url.split("/")[-1]
+        await storage_service.delete_resume_file(current_user.id, filename)
+
+    db.delete(resume)
+    db.commit()
+
+    return {"status": "success", "message": "Resume and document file permanently deleted."}
+

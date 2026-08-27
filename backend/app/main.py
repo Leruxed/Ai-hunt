@@ -1,11 +1,20 @@
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, Request, status
+from fastapi import FastAPI, Request, Response, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from app.core.config import settings
 from app.db.session import engine, Base
 from app.models import *  # Ensure all SQLAlchemy models are registered
-from app.api.v1 import auth, resumes, jobs, applications, matches, external_jobs, notifications
+from app.api.v1 import (
+    auth,
+    resumes,
+    jobs,
+    applications,
+    matches,
+    external_jobs,
+    notifications,
+    evaluation
+)
 
 
 @asynccontextmanager
@@ -34,6 +43,18 @@ if settings.BACKEND_CORS_ORIGINS:
         allow_headers=["*"],
     )
 
+
+# Security Headers Middleware
+@app.middleware("http")
+async def add_security_headers(request: Request, call_next):
+    response: Response = await call_next(request)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["X-XSS-Protection"] = "1; mode=block"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    return response
+
+
 # Global error handler for uncaught exceptions
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
@@ -41,6 +62,7 @@ async def global_exception_handler(request: Request, exc: Exception):
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         content={"detail": "An internal server error occurred.", "type": exc.__class__.__name__}
     )
+
 
 # Mount API Routers
 app.include_router(auth.router, prefix=settings.API_V1_STR)
@@ -50,6 +72,7 @@ app.include_router(applications.router, prefix=settings.API_V1_STR)
 app.include_router(matches.router, prefix=settings.API_V1_STR)
 app.include_router(external_jobs.router, prefix=settings.API_V1_STR)
 app.include_router(notifications.router, prefix=settings.API_V1_STR)
+app.include_router(evaluation.router, prefix=settings.API_V1_STR)
 
 
 @app.get("/health", tags=["Health"])

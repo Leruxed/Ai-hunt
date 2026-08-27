@@ -69,6 +69,19 @@ class StorageService:
             pass
         return False
 
+    def delete_user_folder(self, user_id: str) -> bool:
+        """Deletes user storage folder and all contents upon account erasure."""
+        import shutil
+        try:
+            safe_user = Path(user_id).name
+            user_folder = (self.base_dir / safe_user).resolve()
+            if user_folder.exists() and str(user_folder).startswith(str(self.base_dir.resolve())):
+                shutil.rmtree(user_folder)
+                return True
+        except Exception:
+            pass
+        return False
+
 
 # Global singleton instance
 storage_service = StorageService()
