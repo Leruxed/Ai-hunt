@@ -6,6 +6,7 @@ from app.models.job_posting import JobPosting, JobStatus, JobType
 from app.models.external_job import ExternalJob
 from app.models.application import Application, ApplicationStatus
 from app.models.match_score import MatchScore, TargetType
+from app.models.notification import Notification
 
 __all__ = [
     "User",
@@ -24,4 +25,5 @@ __all__ = [
     "ApplicationStatus",
     "MatchScore",
     "TargetType",
+    "Notification",
 ]

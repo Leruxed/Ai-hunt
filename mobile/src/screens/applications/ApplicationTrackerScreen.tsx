@@ -6,27 +6,35 @@ import {
   StyleSheet,
   ActivityIndicator,
   SafeAreaView,
-  TouchableOpacity,
+  RefreshControl,
 } from "react-native";
 import { api } from "../../api/client";
 import { Application, ApplicationStatus } from "../../types";
 
-const STATUS_COLORS: Record<ApplicationStatus, { bg: string; text: string }> = {
-  submitted: { bg: "#1E293B", text: "#94A3B8" },
-  under_review: { bg: "#1E1B4B", text: "#A5B4FC" },
-  shortlisted: { bg: "#064E3B", text: "#6EE7B7" },
-  interview_scheduled: { bg: "#78350F", text: "#FCD34D" },
-  accepted: { bg: "#065F46", text: "#34D399" },
-  rejected: { bg: "#7F1D1D", text: "#FCA5A5" },
-  withdrawn: { bg: "#18181B", text: "#71717A" },
+const STAGES: { key: ApplicationStatus; label: string }[] = [
+  { key: "submitted", label: "Submitted" },
+  { key: "under_review", label: "Review" },
+  { key: "shortlisted", label: "Shortlist" },
+  { key: "interview_scheduled", label: "Interview" },
+  { key: "accepted", label: "Decision" },
+];
+
+const STATUS_STAGE_MAP: Record<ApplicationStatus, number> = {
+  submitted: 0,
+  under_review: 1,
+  shortlisted: 2,
+  interview_scheduled: 3,
+  accepted: 4,
+  rejected: 4,
+  withdrawn: -1,
 };
 
-export const ApplicationTrackerScreen = () => {
+export const ApplicationTrackerScreen: React.FC = () => {
   const [applications, setApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   const fetchApplications = async () => {
-    setLoading(true);
     try {
       const data = await api.getMyApplications();
       setApplications(data);
@@ -34,16 +42,85 @@ export const ApplicationTrackerScreen = () => {
       console.error(err);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
 
   useEffect(() => {
+    setLoading(true);
     fetchApplications();
   }, []);
 
+  const renderStepper = (status: ApplicationStatus) => {
+    if (status === "withdrawn") {
+      return (
+        <View style={styles.terminalBanner}>
+          <Text style={styles.withdrawnText}>Application Withdrawn</Text>
+        </View>
+      );
+    }
+
+    if (status === "rejected") {
+      return (
+        <View style={styles.rejectedBanner}>
+          <Text style={styles.rejectedText}>Position Closed / Not Selected</Text>
+        </View>
+      );
+    }
+
+    const currentStageIdx = STATUS_STAGE_MAP[status] ?? 0;
+
+    return (
+      <View style={styles.stepperContainer}>
+        {STAGES.map((stage, idx) => {
+          const isCompleted = idx < currentStageIdx;
+          const isCurrent = idx === currentStageIdx;
+
+          return (
+            <React.Fragment key={stage.key}>
+              <View style={styles.stepItem}>
+                <View
+                  style={[
+                    styles.stepCircle,
+                    isCompleted && styles.stepCircleCompleted,
+                    isCurrent && styles.stepCircleCurrent,
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.stepNumber,
+                      (isCompleted || isCurrent) && styles.stepNumberActive,
+                    ]}
+                  >
+                    {isCompleted ? "✓" : idx + 1}
+                  </Text>
+                </View>
+                <Text
+                  style={[
+                    styles.stepLabel,
+                    isCurrent && styles.stepLabelCurrent,
+                    isCompleted && styles.stepLabelCompleted,
+                  ]}
+                >
+                  {stage.label}
+                </Text>
+              </View>
+              {idx < STAGES.length - 1 && (
+                <View
+                  style={[
+                    styles.stepLine,
+                    idx < currentStageIdx && styles.stepLineCompleted,
+                  ]}
+                />
+              )}
+            </React.Fragment>
+          );
+        })}
+      </View>
+    );
+  };
+
   const renderApplicationItem = ({ item }: { item: Application }) => {
-    const statusMeta = STATUS_COLORS[item.status] || STATUS_COLORS.submitted;
-    const formattedStatus = item.status.replace("_", " ").toUpperCase();
     const appliedDate = new Date(item.applied_at).toLocaleDateString("en-US", {
       month: "short",
       day: "numeric",
@@ -54,9 +131,9 @@ export const ApplicationTrackerScreen = () => {
       <View style={styles.card}>
         <View style={styles.cardHeader}>
           <Text style={styles.appliedDate}>Applied on {appliedDate}</Text>
-          <View style={[styles.statusBadge, { backgroundColor: statusMeta.bg }]}>
-            <Text style={[styles.statusText, { color: statusMeta.text }]}>
-              {formattedStatus}
+          <View style={styles.statusBadge}>
+            <Text style={styles.statusBadgeText}>
+              {item.status.replace("_", " ").toUpperCase()}
             </Text>
           </View>
         </View>
@@ -68,6 +145,9 @@ export const ApplicationTrackerScreen = () => {
           {item.job_posting?.employer?.company_name || "Partner Company"} •{" "}
           {item.job_posting?.location || "Metro Manila"}
         </Text>
+
+        {/* Visual Progress Stepper */}
+        {renderStepper(item.status)}
 
         {item.notes && (
           <Text style={styles.notesText} numberOfLines={2}>
@@ -95,8 +175,16 @@ export const ApplicationTrackerScreen = () => {
           keyExtractor={(item) => item.id}
           renderItem={renderApplicationItem}
           contentContainerStyle={styles.list}
-          onRefresh={fetchApplications}
-          refreshing={loading}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={() => {
+                setRefreshing(true);
+                fetchApplications();
+              }}
+              tintColor="#6366F1"
+            />
+          }
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
               <Text style={styles.emptyTitle}>No Applications Yet</Text>
@@ -118,11 +206,11 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: 20,
-    paddingTop: 16,
+    paddingTop: 54,
     paddingBottom: 12,
   },
   title: {
-    fontSize: 26,
+    fontSize: 24,
     fontWeight: "800",
     color: "#F8FAFC",
   },
@@ -153,13 +241,15 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
   statusBadge: {
+    backgroundColor: "#1E293B",
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 6,
   },
-  statusText: {
-    fontSize: 11,
+  statusBadgeText: {
+    fontSize: 10,
     fontWeight: "700",
+    color: "#38BDF8",
   },
   jobTitle: {
     fontSize: 17,
@@ -170,11 +260,98 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: "#94A3B8",
     marginTop: 2,
+    marginBottom: 12,
+  },
+  stepperContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginVertical: 14,
+    paddingHorizontal: 4,
+  },
+  stepItem: {
+    alignItems: "center",
+  },
+  stepCircle: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: "#1E293B",
+    borderWidth: 1.5,
+    borderColor: "#475569",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  stepCircleCompleted: {
+    backgroundColor: "#059669",
+    borderColor: "#10B981",
+  },
+  stepCircleCurrent: {
+    backgroundColor: "#4F46E5",
+    borderColor: "#818CF8",
+  },
+  stepNumber: {
+    fontSize: 10,
+    color: "#64748B",
+    fontWeight: "700",
+  },
+  stepNumberActive: {
+    color: "#FFFFFF",
+  },
+  stepLabel: {
+    fontSize: 9,
+    color: "#64748B",
+    marginTop: 4,
+    fontWeight: "500",
+  },
+  stepLabelCompleted: {
+    color: "#10B981",
+    fontWeight: "600",
+  },
+  stepLabelCurrent: {
+    color: "#818CF8",
+    fontWeight: "700",
+  },
+  stepLine: {
+    flex: 1,
+    height: 2,
+    backgroundColor: "#1E293B",
+    marginHorizontal: 2,
+    marginBottom: 14,
+  },
+  stepLineCompleted: {
+    backgroundColor: "#059669",
+  },
+  rejectedBanner: {
+    backgroundColor: "#450A0A",
+    borderRadius: 8,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    marginVertical: 8,
+    alignItems: "center",
+  },
+  rejectedText: {
+    color: "#F87171",
+    fontSize: 12,
+    fontWeight: "600",
+  },
+  terminalBanner: {
+    backgroundColor: "#18181B",
+    borderRadius: 8,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    marginVertical: 8,
+    alignItems: "center",
+  },
+  withdrawnText: {
+    color: "#71717A",
+    fontSize: 12,
+    fontWeight: "600",
   },
   notesText: {
     color: "#64748B",
     fontSize: 12,
-    marginTop: 8,
+    marginTop: 4,
     fontStyle: "italic",
   },
   emptyContainer: {

@@ -126,3 +126,31 @@ export interface Application {
   applied_at: string;
   job_posting?: JobPosting;
 }
+
+export interface RankedApplicant {
+  application_id: string;
+  user_id: string;
+  candidate_name: string;
+  candidate_email: string;
+  status: ApplicationStatus;
+  applied_at: string;
+  resume_id?: string;
+  resume_url?: string;
+  resume_filename?: string;
+  match_score: number;
+  skill_score: number;
+  experience_score: number;
+  education_score: number;
+  explanation: MatchExplanation;
+}
+
+export interface NotificationItem {
+  id: string;
+  user_id: string;
+  title: string;
+  message: string;
+  notification_type: string;
+  metadata_json?: Record<string, any>;
+  is_read: boolean;
+  created_at: string;
+}

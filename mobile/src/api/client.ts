@@ -1,4 +1,14 @@
-import { AuthResponse, RecommendationItem, Resume, JobPosting, Application, UserRole } from "../types";
+import {
+  AuthResponse,
+  RecommendationItem,
+  Resume,
+  JobPosting,
+  Application,
+  RankedApplicant,
+  NotificationItem,
+  UserRole,
+  ApplicationStatus,
+} from "../types";
 
 const API_BASE_URL = "http://localhost:8000/api/v1";
 
@@ -105,6 +115,17 @@ class ApiClient {
     return this.request<Application[]>("/applications/my-applications");
   }
 
+  async getPostingApplicants(postingId: string): Promise<RankedApplicant[]> {
+    return this.request<RankedApplicant[]>(`/applications/posting/${postingId}/applicants`);
+  }
+
+  async updateApplicationStatus(applicationId: string, status: ApplicationStatus): Promise<Application> {
+    return this.request<Application>(`/applications/${applicationId}/status`, {
+      method: "PATCH",
+      body: JSON.stringify({ status }),
+    });
+  }
+
   // Employer Job Postings
   async getMyPostings(): Promise<JobPosting[]> {
     return this.request<JobPosting[]>("/jobs/my-postings");
@@ -114,6 +135,27 @@ class ApiClient {
     return this.request<JobPosting>("/jobs/", {
       method: "POST",
       body: JSON.stringify(posting),
+    });
+  }
+
+  // Notifications
+  async getNotifications(): Promise<NotificationItem[]> {
+    return this.request<NotificationItem[]>("/notifications/");
+  }
+
+  async getUnreadNotificationCount(): Promise<{ unread_count: number }> {
+    return this.request<{ unread_count: number }>("/notifications/unread-count");
+  }
+
+  async markNotificationRead(notificationId: string): Promise<NotificationItem> {
+    return this.request<NotificationItem>(`/notifications/${notificationId}/read`, {
+      method: "PATCH",
+    });
+  }
+
+  async markAllNotificationsRead(): Promise<void> {
+    await this.request<{ status: string }>("/notifications/read-all", {
+      method: "PATCH",
     });
   }
 }

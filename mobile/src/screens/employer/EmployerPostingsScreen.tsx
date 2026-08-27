@@ -12,10 +12,12 @@ import {
   Modal,
   ScrollView,
 } from "react-native";
+import { useNavigation } from "@react-navigation/native";
 import { api } from "../../api/client";
 import { JobPosting, JobType } from "../../types";
 
 export const EmployerPostingsScreen = () => {
+  const navigation = useNavigation<any>();
   const [postings, setPostings] = useState<JobPosting[]>([]);
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
@@ -98,6 +100,18 @@ export const EmployerPostingsScreen = () => {
           </View>
         ))}
       </View>
+
+      <TouchableOpacity
+        style={styles.viewApplicantsButton}
+        onPress={() =>
+          navigation.navigate("EmployerApplicants", {
+            postingId: item.id,
+            postingTitle: item.title,
+          })
+        }
+      >
+        <Text style={styles.viewApplicantsButtonText}>👥 View Ranked Applicants →</Text>
+      </TouchableOpacity>
     </View>
   );
 
@@ -290,6 +304,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 6,
+    marginBottom: 14,
   },
   skillChip: {
     backgroundColor: "#1E293B",
@@ -301,6 +316,19 @@ const styles = StyleSheet.create({
     color: "#CBD5E1",
     fontSize: 12,
     fontWeight: "600",
+  },
+  viewApplicantsButton: {
+    backgroundColor: "#1e1b4b",
+    borderWidth: 1,
+    borderColor: "#6366f1",
+    paddingVertical: 10,
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  viewApplicantsButtonText: {
+    color: "#a5b4fc",
+    fontWeight: "700",
+    fontSize: 13,
   },
   emptyContainer: {
     padding: 40,

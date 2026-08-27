@@ -12,6 +12,7 @@ import { ApplicationTrackerScreen } from "../screens/applications/ApplicationTra
 import { ResumeUploadScreen } from "../screens/resume/ResumeUploadScreen";
 import { ResumeReviewScreen } from "../screens/resume/ResumeReviewScreen";
 import { EmployerPostingsScreen } from "../screens/employer/EmployerPostingsScreen";
+import { EmployerApplicantsScreen } from "../screens/employer/EmployerApplicantsScreen";
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -38,9 +39,31 @@ const ResumeStack = () => (
   </Stack.Navigator>
 );
 
+// Employer Stack (Postings -> Ranked Applicants)
+const EmployerStack = () => (
+  <Stack.Navigator
+    screenOptions={{
+      headerStyle: { backgroundColor: "#090D16" },
+      headerTintColor: "#F8FAFC",
+      headerShadowVisible: false,
+    }}
+  >
+    <Stack.Screen
+      name="EmployerPostingsList"
+      component={EmployerPostingsScreen}
+      options={{ headerShown: false }}
+    />
+    <Stack.Screen
+      name="EmployerApplicants"
+      component={EmployerApplicantsScreen}
+      options={{ title: "Ranked Applicants", headerShown: false }}
+    />
+  </Stack.Navigator>
+);
+
 // Student Tab Navigator
 const StudentTabNavigator = () => {
-  const { logout, user } = useAuth();
+  const { logout } = useAuth();
   return (
     <Tab.Navigator
       screenOptions={{
@@ -111,8 +134,8 @@ const EmployerTabNavigator = () => {
     >
       <Tab.Screen
         name="EmployerPostings"
-        component={EmployerPostingsScreen}
-        options={{ title: "Postings & Applicants" }}
+        component={EmployerStack}
+        options={{ title: "Postings & Applicants", headerShown: false }}
       />
     </Tab.Navigator>
   );
