@@ -1,3 +1,4 @@
+import Constants from "expo-constants";
 import {
   AuthResponse,
   RecommendationItem,
@@ -10,7 +11,18 @@ import {
   ApplicationStatus,
 } from "../types";
 
-const API_BASE_URL = "http://localhost:8000/api/v1";
+// Dynamically resolve the backend URL based on the Expo bundler host IP
+const getApiBaseUrl = (): string => {
+  const hostUri = Constants.expoConfig?.hostUri;
+  if (hostUri) {
+    const ip = hostUri.split(":")[0];
+    return `http://${ip}:8000/api/v1`;
+  }
+  // Default to local machine IP for physical device testing or fallback to localhost
+  return "http://192.168.1.27:8000/api/v1";
+};
+
+const API_BASE_URL = getApiBaseUrl();
 
 class ApiClient {
   private token: string | null = null;
