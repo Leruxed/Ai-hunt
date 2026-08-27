@@ -1,5 +1,5 @@
 import re
-from typing import Dict, List, Optional, Set, Tuple
+from typing import Dict, List, Optional, Set, Tuple, Any
 from thefuzz import fuzz
 
 # Curated, pre-agreed standard skills taxonomy for SkillMatch AI

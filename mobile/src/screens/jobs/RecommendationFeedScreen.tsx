@@ -90,12 +90,13 @@ export const RecommendationFeedScreen = ({ navigation }: any) => {
               ]}
             >
               <Text
-                style={[
-                  styles.sourceBadgeText,
-                  isInternal ? styles.internalBadgeText : styles.externalBadgeText,
-                ]}
+                style={
+                  isInternal ? styles.internalBadgeText : styles.externalBadgeText
+                }
               >
-                {isInternal ? "Internal Posting" : `External (${item.target.source || "Web"})`}
+                {isInternal
+                  ? "Internal Posting"
+                  : `External (${(item.target as ExternalJob).source || "Web"})`}
               </Text>
             </View>
           </View>
