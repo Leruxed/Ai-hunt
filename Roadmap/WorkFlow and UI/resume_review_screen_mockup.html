@@ -1,0 +1,28 @@
+<style>
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}
+.phone{width:300px;margin:0 auto;background:#090D16;border:1px solid #1F2937;border-radius:28px;padding:22px 18px 26px}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:999px;font-size:12px;background:#1F2937;color:#E0E7FF;border:1px solid #312E81;margin:0 6px 8px 0}
+.grp{color:#9CA3AF;font-size:11px;letter-spacing:.03em;margin:14px 0 8px}
+.add{display:flex;align-items:center;gap:8px;background:#111827;border:1px solid #1F2937;border-radius:10px;padding:9px 12px;color:#6B7280;font-size:13px}
+.btn{text-align:center;padding:11px;border-radius:10px;font-size:14px;font-weight:500;background:#6366F1;color:#fff;margin-top:18px}
+.title{color:#F9FAFB;font-size:18px;font-weight:500}
+.muted{color:#9CA3AF;font-size:12px}
+</style>
+<h2 class="sr-only">Resume review screen with extracted skills grouped into categories as dismissible chips</h2>
+<div class="phone">
+  <div class="title">Review your skills</div>
+  <p class="muted" style="margin:4px 0 4px">Remove anything that's off, add what's missing</p>
+  <div class="grp">LANGUAGES</div>
+  <span class="chip">Python <i class="ti ti-x" style="font-size:12px" aria-hidden="true"></i></span>
+  <span class="chip">JavaScript <i class="ti ti-x" style="font-size:12px" aria-hidden="true"></i></span>
+  <div class="grp">FRAMEWORKS</div>
+  <span class="chip">FastAPI <i class="ti ti-x" style="font-size:12px" aria-hidden="true"></i></span>
+  <span class="chip">React <i class="ti ti-x" style="font-size:12px" aria-hidden="true"></i></span>
+  <div class="grp">DATABASES</div>
+  <span class="chip">PostgreSQL <i class="ti ti-x" style="font-size:12px" aria-hidden="true"></i></span>
+  <div class="add" style="margin-top:6px">
+    <i class="ti ti-search" style="font-size:14px" aria-hidden="true"></i>
+    Add a skill
+  </div>
+  <div class="btn">Save &amp; activate profile</div>
+</div>

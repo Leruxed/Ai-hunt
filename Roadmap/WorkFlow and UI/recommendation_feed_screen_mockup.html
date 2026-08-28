@@ -1,0 +1,46 @@
+<style>
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}
+.phone{width:300px;margin:0 auto;background:#090D16;border:1px solid #1F2937;border-radius:28px;padding:22px 18px 26px}
+.card{background:#111827;border:1px solid #1F2937;border-radius:12px;padding:14px;margin-bottom:12px}
+.badge{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:500;flex-shrink:0}
+.tag{display:inline-block;padding:3px 8px;border-radius:6px;font-size:10.5px;background:#1F2937;color:#9CA3AF;margin-right:6px}
+.title{color:#F9FAFB;font-size:18px;font-weight:500}
+.job{color:#F9FAFB;font-size:14px;font-weight:500}
+.muted{color:#9CA3AF;font-size:12px}
+.skill-ok{color:#10B981;font-size:11.5px}
+.skill-miss{color:#F59E0B;font-size:11.5px}
+</style>
+<h2 class="sr-only">Recommendation feed with an internal and an external job card, each showing a match score and skill breakdown</h2>
+<div class="phone">
+  <div class="row" style="display:flex;justify-content:space-between;align-items:center">
+    <div class="title">Opportunities</div>
+    <i class="ti ti-adjustments-horizontal" style="font-size:18px;color:#9CA3AF" aria-hidden="true"></i>
+  </div>
+  <p class="muted" style="margin:2px 0 14px">Internal postings + external listings</p>
+
+  <div class="card">
+    <div style="display:flex;gap:12px">
+      <div class="badge" style="background:#052e22;color:#10B981;border:1.5px solid #10B981">88%</div>
+      <div style="flex:1">
+        <div class="job">Junior Python / Backend Developer</div>
+        <p class="muted" style="margin:2px 0 6px">Tech Corp &middot; Makati / Remote</p>
+        <span class="tag">Internship</span><span class="tag">via app</span>
+      </div>
+    </div>
+    <p style="margin:10px 0 0"><span class="skill-ok">&#10003; Python, FastAPI, PostgreSQL</span></p>
+    <p style="margin:2px 0 0"><span class="skill-miss">Missing: Docker, Redis</span></p>
+  </div>
+
+  <div class="card">
+    <div style="display:flex;gap:12px">
+      <div class="badge" style="background:#3a2a05;color:#F59E0B;border:1.5px solid #F59E0B">71%</div>
+      <div style="flex:1">
+        <div class="job">Frontend Engineering Intern</div>
+        <p class="muted" style="margin:2px 0 6px">Innotech PH &middot; Quezon City</p>
+        <span class="tag">OJT</span><span class="tag">via JSearch</span>
+      </div>
+    </div>
+    <p style="margin:10px 0 0"><span class="skill-ok">&#10003; React, JavaScript</span></p>
+    <p style="margin:2px 0 0"><span class="skill-miss">Missing: TypeScript</span></p>
+  </div>
+</div>

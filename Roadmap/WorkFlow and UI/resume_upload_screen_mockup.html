@@ -1,0 +1,29 @@
+<style>
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}
+.phone{width:300px;margin:0 auto;background:#090D16;border:1px solid #1F2937;border-radius:28px;padding:22px 18px 26px}
+.card{background:#111827;border:1px solid #1F2937;border-radius:12px;padding:14px}
+.dash{border:1.5px dashed #4338CA;border-radius:14px;padding:26px 14px;text-align:center}
+.btn{text-align:center;padding:11px;border-radius:10px;font-size:14px;font-weight:500;background:#6366F1;color:#E0E7FF;margin-top:16px;opacity:.65}
+.bar{height:6px;border-radius:999px;background:#1F2937;overflow:hidden;margin-top:10px}
+.fill{height:100%;width:62%;background:#6366F1;border-radius:999px}
+.muted{color:#9CA3AF;font-size:12px}
+.title{color:#F9FAFB;font-size:18px;font-weight:500}
+</style>
+<h2 class="sr-only">Resume upload screen showing a selected file mid-parse with a progress indicator</h2>
+<div class="phone">
+  <div class="title">Upload your resume</div>
+  <p class="muted" style="margin:4px 0 18px">PDF or DOCX, up to 5MB</p>
+  <div class="dash">
+    <i class="ti ti-cloud-upload" style="font-size:26px;color:#6366F1" aria-hidden="true"></i>
+    <p style="color:#F9FAFB;font-size:13px;margin:10px 0 2px">resume_juandelacruz.pdf</p>
+    <p class="muted">248 KB &middot; selected</p>
+  </div>
+  <div class="card" style="margin-top:16px">
+    <div style="display:flex;align-items:center;gap:8px">
+      <i class="ti ti-loader-2" style="font-size:16px;color:#6366F1" aria-hidden="true"></i>
+      <span style="color:#F9FAFB;font-size:13px">Extracting skills, education, experience...</span>
+    </div>
+    <div class="bar"><div class="fill"></div></div>
+  </div>
+  <div class="btn">Parsing resume...</div>
+</div>

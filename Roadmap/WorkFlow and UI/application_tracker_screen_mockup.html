@@ -1,0 +1,42 @@
+<style>
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}
+.phone{width:300px;margin:0 auto;background:#090D16;border:1px solid #1F2937;border-radius:28px;padding:22px 18px 26px}
+.card{background:#111827;border:1px solid #1F2937;border-radius:12px;padding:14px;margin-bottom:14px}
+.title{color:#F9FAFB;font-size:18px;font-weight:500;margin-bottom:14px}
+.job{color:#F9FAFB;font-size:14px;font-weight:500}
+.muted{color:#9CA3AF;font-size:11.5px}
+.steps{display:flex;align-items:center;margin-top:14px}
+.dot{width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0}
+.seg{flex:1;height:2px}
+.lbl{font-size:8.5px;color:#6B7280;text-align:center;width:18px;margin-top:4px}
+</style>
+<h2 class="sr-only">Application tracker with two cards, each showing a five step status progress line at a different stage</h2>
+<div class="phone">
+  <div class="title">Your applications</div>
+
+  <div class="card">
+    <div class="job">Backend Engineering Intern</div>
+    <p class="muted">Tech Corp &middot; updated 2 days ago</p>
+    <div class="steps">
+      <div class="dot" style="background:#10B981;color:#052e22">&#10003;</div><div class="seg" style="background:#10B981"></div>
+      <div class="dot" style="background:#10B981;color:#052e22">&#10003;</div><div class="seg" style="background:#10B981"></div>
+      <div class="dot" style="background:#10B981;color:#052e22">&#10003;</div><div class="seg" style="background:#6366F1"></div>
+      <div class="dot" style="background:#6366F1;color:#fff">4</div><div class="seg" style="background:#1F2937"></div>
+      <div class="dot" style="background:#1F2937;color:#6B7280">5</div>
+    </div>
+    <div style="display:flex"><div class="lbl">Sub</div><div style="flex:1"></div><div class="lbl">Rev</div><div style="flex:1"></div><div class="lbl">Short</div><div style="flex:1"></div><div class="lbl">Interv</div><div style="flex:1"></div><div class="lbl">Accept</div></div>
+  </div>
+
+  <div class="card">
+    <div class="job">UI/UX Design Intern</div>
+    <p class="muted">Creativa Studio &middot; updated today</p>
+    <div class="steps">
+      <div class="dot" style="background:#6366F1;color:#fff">1</div><div class="seg" style="background:#1F2937"></div>
+      <div class="dot" style="background:#1F2937;color:#6B7280">2</div><div class="seg" style="background:#1F2937"></div>
+      <div class="dot" style="background:#1F2937;color:#6B7280">3</div><div class="seg" style="background:#1F2937"></div>
+      <div class="dot" style="background:#1F2937;color:#6B7280">4</div><div class="seg" style="background:#1F2937"></div>
+      <div class="dot" style="background:#1F2937;color:#6B7280">5</div>
+    </div>
+    <div style="display:flex"><div class="lbl">Sub</div><div style="flex:1"></div><div class="lbl">Rev</div><div style="flex:1"></div><div class="lbl">Short</div><div style="flex:1"></div><div class="lbl">Interv</div><div style="flex:1"></div><div class="lbl">Accept</div></div>
+  </div>
+</div>
