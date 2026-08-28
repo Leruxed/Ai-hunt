@@ -8,19 +8,25 @@ import {
   ActivityIndicator,
   Alert,
   RefreshControl,
+  SafeAreaView,
 } from "react-native";
-import { useRoute } from "@react-navigation/native";
+import { useRoute, useNavigation } from "@react-navigation/native";
 import { api } from "../../api/client";
 import { RankedApplicant, ApplicationStatus } from "../../types";
+import { colors, typography, spacing } from "../../theme";
+import { Card } from "../../components/common/Card";
+import { ScoreBadge } from "../../components/common/ScoreBadge";
+import { SkillChip } from "../../components/common/SkillChip";
 
 const STATUS_ACTIONS: { label: string; status: ApplicationStatus; color: string }[] = [
-  { label: "Shortlist", status: "shortlisted", color: "#6366f1" },
-  { label: "Interview", status: "interview_scheduled", color: "#3b82f6" },
-  { label: "Accept", status: "accepted", color: "#10b981" },
-  { label: "Reject", status: "rejected", color: "#ef4444" },
+  { label: "Shortlist", status: "shortlisted", color: colors.primary },
+  { label: "Interview", status: "interview_scheduled", color: "#3B82F6" },
+  { label: "Accept", status: "accepted", color: colors.success },
+  { label: "Reject", status: "rejected", color: colors.danger },
 ];
 
 export const EmployerApplicantsScreen: React.FC = () => {
+  const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const { postingId, postingTitle } = route.params || {};
 
@@ -29,7 +35,8 @@ export const EmployerApplicantsScreen: React.FC = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
-  const fetchApplicants = async () => {
+  const fetchApplicants = async (isRefresh = false) => {
+    if (!isRefresh) setLoading(true);
     try {
       const data = await api.getPostingApplicants(postingId);
       setApplicants(data);
@@ -57,7 +64,10 @@ export const EmployerApplicantsScreen: React.FC = () => {
             : app
         )
       );
-      Alert.alert("Status Updated", `Candidate status changed to ${newStatus.replace("_", " ")}.`);
+      Alert.alert(
+        "Candidate Updated",
+        `Application status moved to ${newStatus.replace("_", " ")}. Student notified.`
+      );
     } catch (err: any) {
       Alert.alert("Error", err.message || "Failed to update candidate status.");
     } finally {
@@ -65,18 +75,11 @@ export const EmployerApplicantsScreen: React.FC = () => {
     }
   };
 
-  const getScoreColor = (pct: number) => {
-    if (pct >= 80) return "#10b981";
-    if (pct >= 60) return "#6366f1";
-    return "#f59e0b";
-  };
-
   const renderApplicantCard = ({ item, index }: { item: RankedApplicant; index: number }) => {
-    const matchPct = Math.round(item.match_score * 100);
-    const scoreColor = getScoreColor(matchPct);
+    const isUpdating = updatingId === item.application_id;
 
     return (
-      <View style={styles.card}>
+      <Card style={styles.card}>
         <View style={styles.cardHeader}>
           <View style={styles.rankBadge}>
             <Text style={styles.rankText}>#{index + 1}</Text>
@@ -85,64 +88,64 @@ export const EmployerApplicantsScreen: React.FC = () => {
             <Text style={styles.candidateName}>{item.candidate_name}</Text>
             <Text style={styles.candidateEmail}>{item.candidate_email}</Text>
           </View>
-          <View style={[styles.matchScoreBadge, { backgroundColor: scoreColor + "20", borderColor: scoreColor }]}>
-            <Text style={[styles.matchScoreText, { color: scoreColor }]}>{matchPct}% Match</Text>
-          </View>
+          <ScoreBadge score={item.match_score} size={42} />
         </View>
 
         {/* Explainability Summary */}
         <Text style={styles.explanationText}>{item.explanation.summary}</Text>
 
-        {/* Skills Breakdown */}
+        {/* Matched Skills */}
         {item.explanation.matched_skills.length > 0 && (
           <View style={styles.skillSection}>
-            <Text style={styles.skillSectionTitle}>Matched Skills ({item.explanation.matched_skills.length}):</Text>
+            <Text style={styles.skillSectionTitle}>
+              Matched Skills ({item.explanation.matched_skills.length}):
+            </Text>
             <View style={styles.chipRow}>
-              {item.explanation.matched_skills.map((skill) => (
-                <View key={skill} style={styles.matchedChip}>
-                  <Text style={styles.matchedChipText}>✓ {skill}</Text>
-                </View>
+              {item.explanation.matched_skills.map((skill, idx) => (
+                <SkillChip key={idx} label={skill} variant="matched" />
               ))}
             </View>
           </View>
         )}
 
+        {/* Missing Skills */}
         {item.explanation.missing_skills.length > 0 && (
           <View style={styles.skillSection}>
-            <Text style={styles.skillSectionTitle}>Missing Skills ({item.explanation.missing_skills.length}):</Text>
+            <Text style={styles.skillSectionTitleWarning}>
+              Missing Required Skills:
+            </Text>
             <View style={styles.chipRow}>
-              {item.explanation.missing_skills.map((skill) => (
-                <View key={skill} style={styles.missingChip}>
-                  <Text style={styles.missingChipText}>- {skill}</Text>
-                </View>
+              {item.explanation.missing_skills.map((skill, idx) => (
+                <SkillChip key={idx} label={skill} variant="missing" />
               ))}
             </View>
           </View>
         )}
 
-        {/* Current Status & Action Bar */}
-        <View style={styles.statusSection}>
+        {/* Status Actions Toolbar */}
+        <View style={styles.actionToolbar}>
           <Text style={styles.currentStatusLabel}>
             Status: <Text style={styles.statusValue}>{item.status.replace("_", " ").toUpperCase()}</Text>
           </Text>
-
-          <View style={styles.actionRow}>
+          <View style={styles.btnRow}>
             {STATUS_ACTIONS.map((action) => {
               const isActive = item.status === action.status;
               return (
                 <TouchableOpacity
                   key={action.status}
                   style={[
-                    styles.actionButton,
-                    isActive && { backgroundColor: action.color, borderColor: action.color },
+                    styles.actionBtn,
+                    { borderColor: action.color },
+                    isActive && { backgroundColor: action.color },
+                    isUpdating && { opacity: 0.5 },
                   ]}
-                  disabled={updatingId === item.application_id}
                   onPress={() => handleStatusUpdate(item, action.status)}
+                  disabled={isUpdating}
                 >
                   <Text
                     style={[
-                      styles.actionButtonText,
-                      isActive && styles.activeActionButtonText,
+                      styles.actionBtnText,
+                      { color: isActive ? "#FFFFFF" : action.color },
                     ]}
                   >
                     {action.label}
@@ -152,21 +155,29 @@ export const EmployerApplicantsScreen: React.FC = () => {
             })}
           </View>
         </View>
-      </View>
+      </Card>
     );
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Ranked Applicants</Text>
-        <Text style={styles.headerSubtitle} numberOfLines={1}>{postingTitle || "Job Applicants"}</Text>
+        <TouchableOpacity
+          style={styles.backBtn}
+          onPress={() => navigation.goBack()}
+        >
+          <Text style={styles.backBtnText}>← Back to Postings</Text>
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>AI-Ranked Candidates</Text>
+        <Text style={styles.headerSubtitle} numberOfLines={1}>
+          {postingTitle || "Job Position"}
+        </Text>
       </View>
 
-      {loading ? (
-        <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" color="#6366f1" />
-          <Text style={styles.loadingText}>Ranking candidates with AI...</Text>
+      {loading && !refreshing ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <Text style={styles.loadingText}>Ranking applicants by hybrid AI affinity...</Text>
         </View>
       ) : (
         <FlatList
@@ -177,207 +188,173 @@ export const EmployerApplicantsScreen: React.FC = () => {
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
-              onRefresh={() => {
-                setRefreshing(true);
-                fetchApplicants();
-              }}
-              tintColor="#6366f1"
+              onRefresh={() => fetchApplicants(true)}
+              tintColor={colors.primary}
             />
           }
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
               <Text style={styles.emptyTitle}>No Applicants Yet</Text>
-              <Text style={styles.emptySubtitle}>
-                Candidates matching your job requirements will appear here ranked by AI relevance.
+              <Text style={styles.emptySub}>
+                When students apply, they will automatically appear here pre-ranked by skill alignment.
               </Text>
             </View>
           }
         />
       )}
-    </View>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#0f172a",
+    backgroundColor: colors.background,
   },
   header: {
-    paddingHorizontal: 20,
-    paddingTop: 54,
-    paddingBottom: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: "#1e293b",
+    paddingHorizontal: spacing.xl,
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.sm,
+  },
+  backBtn: {
+    marginBottom: spacing.xs,
+  },
+  backBtnText: {
+    color: colors.primaryLight,
+    fontSize: 12.5,
+    fontWeight: "600",
   },
   headerTitle: {
-    fontSize: 22,
-    fontWeight: "700",
-    color: "#f8fafc",
+    ...typography.h2,
+    color: colors.textPrimary,
   },
   headerSubtitle: {
-    fontSize: 14,
-    color: "#94a3b8",
-    marginTop: 4,
-  },
-  centerContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  loadingText: {
-    color: "#94a3b8",
-    marginTop: 12,
-    fontSize: 14,
+    ...typography.muted,
+    color: colors.textMuted,
+    marginTop: 2,
   },
   listContent: {
-    padding: 16,
+    padding: spacing.lg,
   },
   card: {
-    backgroundColor: "#1e293b",
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: "#334155",
+    padding: 14,
+    marginBottom: 12,
   },
   cardHeader: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 10,
+    marginBottom: spacing.sm,
   },
   rankBadge: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: "#334155",
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 10,
+    backgroundColor: colors.surfaceElevated,
+    borderColor: colors.border,
+    borderWidth: 1,
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    marginRight: spacing.sm,
   },
   rankText: {
-    color: "#6366f1",
+    color: colors.primaryLight,
+    fontSize: 12,
     fontWeight: "700",
-    fontSize: 14,
   },
   headerInfo: {
     flex: 1,
   },
   candidateName: {
-    fontSize: 16,
+    fontSize: 14.5,
     fontWeight: "700",
-    color: "#f8fafc",
+    color: colors.textPrimary,
   },
   candidateEmail: {
-    fontSize: 12,
-    color: "#94a3b8",
-    marginTop: 2,
-  },
-  matchScoreBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-    borderWidth: 1,
-  },
-  matchScoreText: {
-    fontWeight: "700",
-    fontSize: 12,
+    fontSize: 11.5,
+    color: colors.textMuted,
+    marginTop: 1,
   },
   explanationText: {
-    fontSize: 13,
-    color: "#cbd5e1",
-    lineHeight: 18,
-    marginBottom: 12,
+    fontSize: 12,
+    color: colors.textSecondary,
+    backgroundColor: colors.surfaceElevated,
+    padding: 8,
+    borderRadius: 6,
+    marginVertical: spacing.xs,
+    lineHeight: 16,
   },
   skillSection: {
-    marginBottom: 8,
+    marginTop: spacing.xs,
   },
   skillSectionTitle: {
     fontSize: 11,
     fontWeight: "600",
-    color: "#94a3b8",
-    textTransform: "uppercase",
+    color: colors.success,
+    marginBottom: 4,
+  },
+  skillSectionTitleWarning: {
+    fontSize: 11,
+    fontWeight: "600",
+    color: colors.warning,
     marginBottom: 4,
   },
   chipRow: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 6,
   },
-  matchedChip: {
-    backgroundColor: "#064e3b",
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
-  },
-  matchedChipText: {
-    color: "#34d399",
-    fontSize: 11,
-    fontWeight: "500",
-  },
-  missingChip: {
-    backgroundColor: "#450a0a",
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
-  },
-  missingChipText: {
-    color: "#f87171",
-    fontSize: 11,
-    fontWeight: "500",
-  },
-  statusSection: {
-    marginTop: 12,
-    paddingTop: 12,
+  actionToolbar: {
+    marginTop: spacing.md,
+    paddingTop: spacing.sm,
     borderTopWidth: 1,
-    borderTopColor: "#334155",
+    borderTopColor: colors.border,
   },
   currentStatusLabel: {
-    fontSize: 12,
-    color: "#94a3b8",
-    marginBottom: 8,
+    fontSize: 11,
+    color: colors.textMuted,
+    marginBottom: 6,
   },
   statusValue: {
+    color: colors.textPrimary,
     fontWeight: "700",
-    color: "#38bdf8",
   },
-  actionRow: {
+  btnRow: {
     flexDirection: "row",
-    gap: 8,
+    gap: 6,
   },
-  actionButton: {
+  actionBtn: {
     flex: 1,
     paddingVertical: 6,
-    borderRadius: 8,
+    borderRadius: 6,
     borderWidth: 1,
-    borderColor: "#475569",
     alignItems: "center",
     justifyContent: "center",
   },
-  actionButtonText: {
-    color: "#94a3b8",
+  actionBtnText: {
     fontSize: 11,
-    fontWeight: "600",
-  },
-  activeActionButtonText: {
-    color: "#ffffff",
     fontWeight: "700",
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  loadingText: {
+    ...typography.muted,
+    color: colors.textMuted,
+    marginTop: spacing.md,
   },
   emptyContainer: {
     alignItems: "center",
-    paddingTop: 60,
-    paddingHorizontal: 24,
+    paddingVertical: 48,
+    paddingHorizontal: spacing.xl,
   },
   emptyTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#f8fafc",
-    marginBottom: 8,
+    fontSize: 16,
+    fontWeight: "700",
+    color: colors.textPrimary,
+    marginBottom: spacing.xs,
   },
-  emptySubtitle: {
-    fontSize: 14,
-    color: "#94a3b8",
+  emptySub: {
+    ...typography.muted,
+    color: colors.textMuted,
     textAlign: "center",
-    lineHeight: 20,
   },
 });

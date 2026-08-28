@@ -12,11 +12,15 @@ import {
 import * as DocumentPicker from "expo-document-picker";
 import { api } from "../../api/client";
 import { Resume } from "../../types";
+import { colors, typography, spacing } from "../../theme";
+import { Card } from "../../components/common/Card";
+import { SkillChip } from "../../components/common/SkillChip";
 
 export const ResumeUploadScreen = ({ navigation }: any) => {
   const [activeResume, setActiveResume] = useState<Resume | null>(null);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<any>(null);
 
   const fetchCurrentResume = async () => {
     setLoading(true);
@@ -46,6 +50,7 @@ export const ResumeUploadScreen = ({ navigation }: any) => {
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
         const file = result.assets[0];
+        setSelectedFile(file);
         uploadFile(file);
       }
     } catch (err: any) {
@@ -65,9 +70,10 @@ export const ResumeUploadScreen = ({ navigation }: any) => {
 
       const resume = await api.uploadResume(formData);
       setActiveResume(resume);
+      setSelectedFile(null);
       Alert.alert(
         "Upload Successful",
-        "Your resume has been parsed! Please review and verify the extracted skills."
+        "Your resume has been parsed by AI! Please verify the extracted skills."
       );
       navigation.navigate("ResumeReview", { resume });
     } catch (err: any) {
@@ -77,77 +83,113 @@ export const ResumeUploadScreen = ({ navigation }: any) => {
     }
   };
 
+  const formatFileSize = (bytes?: number) => {
+    if (!bytes) return "Selected";
+    const kb = Math.round(bytes / 1024);
+    return `${kb} KB`;
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.content}>
+        {/* Header matching mockup */}
         <View style={styles.header}>
-          <Text style={styles.title}>Resume Management</Text>
-          <Text style={styles.subTitle}>
-            Upload your text-based PDF or DOCX resume to activate AI job matching.
-          </Text>
+          <Text style={styles.title}>Upload your resume</Text>
+          <Text style={styles.subtitle}>PDF or DOCX, up to 5MB</Text>
         </View>
 
         {loading ? (
-          <ActivityIndicator size="large" color="#6366F1" style={{ marginTop: 40 }} />
+          <ActivityIndicator size="large" color={colors.primary} style={{ marginVertical: 32 }} />
         ) : activeResume ? (
-          <View style={styles.activeCard}>
-            <View style={styles.badge}>
-              <Text style={styles.badgeText}>Active Resume</Text>
+          <Card style={styles.activeCard}>
+            <View style={styles.badgeRow}>
+              <View style={styles.statusBadge}>
+                <Text style={styles.statusBadgeText}>Active Resume Profile</Text>
+              </View>
             </View>
+
             <Text style={styles.fileName}>{activeResume.file_name}</Text>
             <Text style={styles.metaText}>
-              Extracted Skills: {activeResume.parsed_data?.skills?.length || 0}
+              Extracted Skills ({activeResume.parsed_data?.skills?.length || 0})
             </Text>
 
-            <View style={styles.skillTags}>
-              {activeResume.parsed_data?.skills?.slice(0, 8).map((skill, idx) => (
-                <View key={idx} style={styles.tag}>
-                  <Text style={styles.tagText}>{skill}</Text>
-                </View>
+            <View style={styles.skillsRow}>
+              {activeResume.parsed_data?.skills?.slice(0, 7).map((skill, idx) => (
+                <SkillChip key={idx} label={skill} />
               ))}
-              {(activeResume.parsed_data?.skills?.length || 0) > 8 && (
-                <View style={styles.tagMore}>
-                  <Text style={styles.tagMoreText}>
-                    +{(activeResume.parsed_data?.skills?.length || 0) - 8} more
+              {(activeResume.parsed_data?.skills?.length || 0) > 7 && (
+                <View style={styles.moreChip}>
+                  <Text style={styles.moreChipText}>
+                    +{(activeResume.parsed_data?.skills?.length || 0) - 7} more
                   </Text>
                 </View>
               )}
             </View>
 
             <TouchableOpacity
-              style={styles.reviewButton}
+              style={styles.reviewBtn}
               onPress={() => navigation.navigate("ResumeReview", { resume: activeResume })}
             >
-              <Text style={styles.reviewButtonText}>Review & Edit Skills</Text>
+              <Text style={styles.reviewBtnText}>Review & Edit Extracted Skills</Text>
             </TouchableOpacity>
+          </Card>
+        ) : null}
+
+        {/* Upload Zone / Drop Area matching mockup */}
+        <TouchableOpacity
+          style={[styles.dropZone, uploading && styles.dropZoneDisabled]}
+          onPress={handlePickDocument}
+          disabled={uploading}
+          activeOpacity={0.7}
+        >
+          <View style={styles.uploadIconContainer}>
+            <Text style={styles.uploadIcon}>☁️</Text>
           </View>
-        ) : (
-          <View style={styles.emptyCard}>
-            <Text style={styles.emptyTitle}>No Resume Uploaded Yet</Text>
-            <Text style={styles.emptySub}>
-              Upload your CV to unlock personalized OJT and internship recommendations.
-            </Text>
-          </View>
+          <Text style={styles.dropTitle}>
+            {selectedFile ? selectedFile.name : activeResume ? "Upload New Version" : "Select Resume File"}
+          </Text>
+          <Text style={styles.dropSub}>
+            {selectedFile
+              ? `${formatFileSize(selectedFile.size)} · selected`
+              : "Tap to browse PDF or DOCX documents"}
+          </Text>
+        </TouchableOpacity>
+
+        {/* Mid-Parse Progress Card matching mockup */}
+        {uploading && (
+          <Card style={styles.parsingCard}>
+            <View style={styles.parsingHeader}>
+              <ActivityIndicator size="small" color={colors.primary} />
+              <Text style={styles.parsingText}>Extracting skills, education, experience...</Text>
+            </View>
+            <View style={styles.progressBar}>
+              <View style={styles.progressFill} />
+            </View>
+          </Card>
         )}
 
-        <View style={styles.uploadBox}>
-          <TouchableOpacity
-            style={[styles.uploadButton, uploading && styles.disabledButton]}
-            onPress={handlePickDocument}
-            disabled={uploading}
-          >
-            {uploading ? (
-              <ActivityIndicator color="#FFFFFF" />
-            ) : (
-              <Text style={styles.uploadButtonText}>
-                {activeResume ? "Upload New Version" : "Select Resume (PDF / DOCX)"}
-              </Text>
-            )}
-          </TouchableOpacity>
-          <Text style={styles.noteText}>
-            Maximum file size: 5MB. Text-based files only (scanned photos not supported).
+        {/* Main CTA Button matching mockup */}
+        <TouchableOpacity
+          style={[
+            styles.ctaButton,
+            uploading && styles.ctaButtonDisabled,
+            activeResume && !uploading && styles.ctaButtonSecondary,
+          ]}
+          onPress={handlePickDocument}
+          disabled={uploading}
+        >
+          <Text style={styles.ctaButtonText}>
+            {uploading
+              ? "Parsing resume..."
+              : activeResume
+              ? "Replace Resume"
+              : "Choose Document"}
           </Text>
-        </View>
+        </TouchableOpacity>
+
+        <Text style={styles.footerNote}>
+          Text-based files only. Magic-byte protected under RA 10173 Data Privacy compliance.
+        </Text>
       </ScrollView>
     </SafeAreaView>
   );
@@ -156,143 +198,168 @@ export const ResumeUploadScreen = ({ navigation }: any) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#090D16",
+    backgroundColor: colors.background,
   },
   content: {
-    padding: 20,
+    padding: spacing.xl,
   },
   header: {
-    marginBottom: 24,
+    marginBottom: spacing.lg,
   },
   title: {
-    fontSize: 26,
-    fontWeight: "800",
-    color: "#F8FAFC",
+    ...typography.h2,
+    color: colors.textPrimary,
   },
-  subTitle: {
-    fontSize: 14,
-    color: "#94A3B8",
-    marginTop: 6,
-    lineHeight: 20,
+  subtitle: {
+    ...typography.muted,
+    color: colors.textMuted,
+    marginTop: spacing.xs,
   },
   activeCard: {
-    backgroundColor: "#131C2E",
-    borderRadius: 16,
-    padding: 20,
+    marginBottom: spacing.xl,
+  },
+  badgeRow: {
+    flexDirection: "row",
+    marginBottom: spacing.sm,
+  },
+  statusBadge: {
+    backgroundColor: colors.successBg,
+    borderColor: colors.success,
     borderWidth: 1,
-    borderColor: "#1E293B",
-    marginBottom: 24,
+    borderRadius: spacing.radiusSm,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
   },
-  badge: {
-    backgroundColor: "#065F46",
-    alignSelf: "flex-start",
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-    marginBottom: 10,
-  },
-  badgeText: {
-    color: "#34D399",
-    fontSize: 12,
+  statusBadgeText: {
+    color: colors.success,
+    fontSize: 11,
     fontWeight: "700",
   },
   fileName: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#F8FAFC",
+    fontSize: 16,
+    fontWeight: "600",
+    color: colors.textPrimary,
   },
   metaText: {
-    fontSize: 13,
-    color: "#94A3B8",
-    marginTop: 4,
-    marginBottom: 14,
+    ...typography.muted,
+    color: colors.textMuted,
+    marginTop: spacing.xs,
+    marginBottom: spacing.md,
   },
-  skillTags: {
+  skillsRow: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 8,
-    marginBottom: 16,
+    marginBottom: spacing.md,
   },
-  tag: {
-    backgroundColor: "#1E293B",
+  moreChip: {
+    paddingVertical: 5,
     paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: "#334155",
-  },
-  tagText: {
-    color: "#E2E8F0",
-    fontSize: 12,
-    fontWeight: "600",
-  },
-  tagMore: {
-    paddingHorizontal: 8,
-    paddingVertical: 5,
     justifyContent: "center",
   },
-  tagMoreText: {
-    color: "#818CF8",
+  moreChipText: {
+    color: colors.primaryText,
     fontSize: 12,
     fontWeight: "600",
   },
-  reviewButton: {
-    backgroundColor: "#1E1B4B",
-    borderColor: "#6366F1",
+  reviewBtn: {
+    backgroundColor: colors.primarySubtle,
+    borderColor: colors.primary,
     borderWidth: 1,
-    borderRadius: 8,
+    borderRadius: spacing.radiusMd,
     paddingVertical: 10,
     alignItems: "center",
   },
-  reviewButtonText: {
-    color: "#A5B4FC",
-    fontSize: 14,
-    fontWeight: "700",
-  },
-  emptyCard: {
-    backgroundColor: "#131C2E",
-    borderRadius: 16,
-    padding: 24,
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#1E293B",
-    marginBottom: 24,
-  },
-  emptyTitle: {
-    fontSize: 17,
-    fontWeight: "700",
-    color: "#F8FAFC",
-    marginBottom: 6,
-  },
-  emptySub: {
+  reviewBtnText: {
+    color: colors.primaryLight,
     fontSize: 13,
-    color: "#94A3B8",
-    textAlign: "center",
-    lineHeight: 18,
+    fontWeight: "600",
   },
-  uploadBox: {
+  dropZone: {
+    borderWidth: 1.5,
+    borderColor: colors.borderDashed,
+    borderStyle: "dashed",
+    borderRadius: spacing.radiusLg,
+    paddingVertical: 26,
+    paddingHorizontal: spacing.lg,
     alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(67, 56, 202, 0.05)",
+    marginBottom: spacing.lg,
   },
-  uploadButton: {
-    backgroundColor: "#6366F1",
-    width: "100%",
-    paddingVertical: 14,
-    borderRadius: 10,
-    alignItems: "center",
-  },
-  disabledButton: {
+  dropZoneDisabled: {
     opacity: 0.6,
   },
-  uploadButtonText: {
-    color: "#FFFFFF",
-    fontSize: 15,
-    fontWeight: "700",
+  uploadIconContainer: {
+    marginBottom: spacing.sm,
   },
-  noteText: {
-    color: "#64748B",
-    fontSize: 12,
+  uploadIcon: {
+    fontSize: 28,
+  },
+  dropTitle: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: colors.textPrimary,
+    marginTop: 4,
     textAlign: "center",
-    marginTop: 12,
-    lineHeight: 16,
+  },
+  dropSub: {
+    ...typography.muted,
+    color: colors.textMuted,
+    marginTop: 3,
+    textAlign: "center",
+  },
+  parsingCard: {
+    marginBottom: spacing.lg,
+    padding: spacing.md,
+  },
+  parsingHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  parsingText: {
+    fontSize: 13,
+    color: colors.textPrimary,
+    fontWeight: "500",
+  },
+  progressBar: {
+    height: 6,
+    borderRadius: spacing.radiusFull,
+    backgroundColor: colors.surfaceElevated,
+    overflow: "hidden",
+    marginTop: spacing.md,
+  },
+  progressFill: {
+    height: "100%",
+    width: "75%",
+    backgroundColor: colors.primary,
+    borderRadius: spacing.radiusFull,
+  },
+  ctaButton: {
+    backgroundColor: colors.primary,
+    paddingVertical: 12,
+    borderRadius: spacing.radiusMd,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  ctaButtonSecondary: {
+    backgroundColor: colors.surfaceElevated,
+    borderColor: colors.border,
+    borderWidth: 1,
+  },
+  ctaButtonDisabled: {
+    opacity: 0.65,
+  },
+  ctaButtonText: {
+    color: "#FFFFFF",
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  footerNote: {
+    fontSize: 11,
+    color: colors.textSubtle,
+    textAlign: "center",
+    marginTop: spacing.lg,
+    lineHeight: 15,
   },
 });

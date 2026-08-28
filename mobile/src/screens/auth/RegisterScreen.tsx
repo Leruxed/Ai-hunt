@@ -13,6 +13,8 @@ import {
 import { useAuth } from "../../store/authContext";
 import { api } from "../../api/client";
 import { UserRole } from "../../types";
+import { colors, typography, spacing } from "../../theme";
+import { Card } from "../../components/common/Card";
 
 export const RegisterScreen = ({ navigation }: any) => {
   const [email, setEmail] = useState("");
@@ -23,13 +25,13 @@ export const RegisterScreen = ({ navigation }: any) => {
   const { login } = useAuth();
 
   const handleRegister = async () => {
-    if (!email || !password || !fullName) {
+    if (!email.trim() || !password || !fullName.trim()) {
       Alert.alert("Validation Error", "Please fill in all fields.");
       return;
     }
     setLoading(true);
     try {
-      const response = await api.register(email.trim(), password, fullName.trim(), role);
+      const response = await api.register(email.trim().toLowerCase(), password, fullName.trim(), role);
       login(response.access_token, response.user);
     } catch (error: any) {
       Alert.alert("Registration Failed", error.message || "Could not register account.");
@@ -46,16 +48,16 @@ export const RegisterScreen = ({ navigation }: any) => {
           <Text style={styles.subTitle}>Join the SkillMatch AI Network</Text>
         </View>
 
-        <View style={styles.card}>
+        <Card style={styles.card}>
           {/* Role selector */}
-          <Text style={styles.label}>I am a:</Text>
+          <Text style={styles.label}>I am registering as a:</Text>
           <View style={styles.roleContainer}>
             <TouchableOpacity
               style={[styles.roleButton, role === "student" && styles.roleButtonActive]}
               onPress={() => setRole("student")}
             >
               <Text style={[styles.roleText, role === "student" && styles.roleTextActive]}>
-                Student / Intern
+                Student / Candidate
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
@@ -69,12 +71,12 @@ export const RegisterScreen = ({ navigation }: any) => {
           </View>
 
           <Text style={styles.label}>
-            {role === "student" ? "Full Name" : "Company / Representative Name"}
+            {role === "student" ? "Full Name" : "Company / Recruiter Name"}
           </Text>
           <TextInput
             style={styles.input}
-            placeholder={role === "student" ? "Maria Santos" : "Innovate Corp"}
-            placeholderTextColor="#64748B"
+            placeholder={role === "student" ? "Juan Dela Cruz" : "Acme Corp / HR"}
+            placeholderTextColor={colors.textDisabled}
             value={fullName}
             onChangeText={setFullName}
           />
@@ -82,8 +84,8 @@ export const RegisterScreen = ({ navigation }: any) => {
           <Text style={styles.label}>Email Address</Text>
           <TextInput
             style={styles.input}
-            placeholder={role === "student" ? "student@school.edu" : "hr@company.com"}
-            placeholderTextColor="#64748B"
+            placeholder={role === "student" ? "student@school.edu" : "recruiter@company.com"}
+            placeholderTextColor={colors.textDisabled}
             autoCapitalize="none"
             keyboardType="email-address"
             value={email}
@@ -94,7 +96,7 @@ export const RegisterScreen = ({ navigation }: any) => {
           <TextInput
             style={styles.input}
             placeholder="At least 8 characters"
-            placeholderTextColor="#64748B"
+            placeholderTextColor={colors.textDisabled}
             secureTextEntry
             value={password}
             onChangeText={setPassword}
@@ -108,17 +110,19 @@ export const RegisterScreen = ({ navigation }: any) => {
             {loading ? (
               <ActivityIndicator color="#FFFFFF" />
             ) : (
-              <Text style={styles.buttonText}>Register</Text>
+              <Text style={styles.buttonText}>
+                {role === "student" ? "Create Student Account" : "Create Employer Account"}
+              </Text>
             )}
           </TouchableOpacity>
 
           <View style={styles.footer}>
             <Text style={styles.footerText}>Already have an account? </Text>
             <TouchableOpacity onPress={() => navigation.navigate("Login")}>
-              <Text style={styles.linkText}>Sign In</Text>
+              <Text style={styles.linkText}>Sign in</Text>
             </TouchableOpacity>
           </View>
-        </View>
+        </Card>
       </ScrollView>
     </SafeAreaView>
   );
@@ -127,106 +131,101 @@ export const RegisterScreen = ({ navigation }: any) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#090D16",
+    backgroundColor: colors.background,
   },
   scrollContainer: {
-    flexGrow: 1,
-    justifyContent: "center",
-    paddingHorizontal: 24,
-    paddingVertical: 32,
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.xxl,
   },
   header: {
-    marginBottom: 24,
+    marginBottom: spacing.xl,
     alignItems: "center",
   },
   brandTitle: {
     fontSize: 28,
     fontWeight: "800",
-    color: "#6366F1",
+    color: colors.textPrimary,
+    letterSpacing: -0.5,
   },
   subTitle: {
-    fontSize: 14,
-    color: "#94A3B8",
-    marginTop: 4,
+    ...typography.muted,
+    color: colors.textMuted,
+    marginTop: spacing.xs,
   },
   card: {
-    backgroundColor: "#131C2E",
-    borderRadius: 16,
-    padding: 24,
-    borderWidth: 1,
-    borderColor: "#1E293B",
+    padding: spacing.xl,
+  },
+  label: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: colors.textMuted,
+    marginBottom: 6,
+    marginTop: spacing.sm,
   },
   roleContainer: {
     flexDirection: "row",
-    gap: 8,
-    marginBottom: 16,
+    gap: spacing.sm,
+    marginBottom: spacing.sm,
   },
   roleButton: {
     flex: 1,
-    paddingVertical: 10,
-    borderRadius: 8,
+    paddingVertical: 9,
+    borderRadius: spacing.radiusSm,
+    backgroundColor: colors.surfaceElevated,
     borderWidth: 1,
-    borderColor: "#334155",
-    backgroundColor: "#0B111E",
+    borderColor: colors.border,
     alignItems: "center",
   },
   roleButtonActive: {
-    borderColor: "#6366F1",
-    backgroundColor: "#1E1B4B",
+    backgroundColor: colors.primarySubtle,
+    borderColor: colors.primary,
   },
   roleText: {
-    color: "#94A3B8",
-    fontSize: 13,
+    color: colors.textMuted,
+    fontSize: 12,
     fontWeight: "600",
   },
   roleTextActive: {
-    color: "#A5B4FC",
+    color: colors.primaryLight,
     fontWeight: "700",
   },
-  label: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: "#CBD5E1",
-    marginBottom: 6,
-    marginTop: 10,
-  },
   input: {
-    backgroundColor: "#0B111E",
+    backgroundColor: colors.surfaceElevated,
+    borderColor: colors.border,
     borderWidth: 1,
-    borderColor: "#334155",
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    color: "#F8FAFC",
-    fontSize: 15,
+    borderRadius: spacing.radiusSm,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 10,
+    color: colors.textPrimary,
+    fontSize: 14,
   },
   primaryButton: {
-    backgroundColor: "#6366F1",
-    borderRadius: 10,
-    paddingVertical: 14,
+    backgroundColor: colors.primary,
+    borderRadius: spacing.radiusSm,
+    paddingVertical: 12,
     alignItems: "center",
-    marginTop: 24,
+    marginTop: spacing.xl,
   },
   disabledButton: {
     opacity: 0.6,
   },
   buttonText: {
     color: "#FFFFFF",
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "700",
   },
   footer: {
     flexDirection: "row",
     justifyContent: "center",
-    marginTop: 20,
+    marginTop: spacing.lg,
   },
   footerText: {
-    color: "#94A3B8",
-    fontSize: 14,
+    color: colors.textMuted,
+    fontSize: 13,
   },
   linkText: {
-    color: "#818CF8",
-    fontSize: 14,
-    fontWeight: "600",
+    color: colors.primaryLight,
+    fontSize: 13,
+    fontWeight: "700",
   },
 });

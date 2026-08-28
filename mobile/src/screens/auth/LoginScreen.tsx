@@ -13,6 +13,8 @@ import {
 } from "react-native";
 import { useAuth } from "../../store/authContext";
 import { api } from "../../api/client";
+import { colors, typography, spacing } from "../../theme";
+import { Card } from "../../components/common/Card";
 
 export const LoginScreen = ({ navigation }: any) => {
   const [email, setEmail] = useState("");
@@ -21,13 +23,13 @@ export const LoginScreen = ({ navigation }: any) => {
   const { login } = useAuth();
 
   const handleLogin = async () => {
-    if (!email || !password) {
+    if (!email.trim() || !password) {
       Alert.alert("Validation Error", "Please enter both email and password.");
       return;
     }
     setLoading(true);
     try {
-      const response = await api.login(email.trim(), password);
+      const response = await api.login(email.trim().toLowerCase(), password);
       login(response.access_token, response.user);
     } catch (error: any) {
       Alert.alert("Login Failed", error.message || "Invalid credentials.");
@@ -45,18 +47,18 @@ export const LoginScreen = ({ navigation }: any) => {
         <View style={styles.header}>
           <Text style={styles.brandTitle}>SkillMatch AI</Text>
           <Text style={styles.subTitle}>
-            Intelligent OJT & Job Matching Engine
+            Intelligent OJT & Early-Career Placement
           </Text>
         </View>
 
-        <View style={styles.card}>
+        <Card style={styles.card}>
           <Text style={styles.cardTitle}>Sign In</Text>
 
           <Text style={styles.label}>Email Address</Text>
           <TextInput
             style={styles.input}
             placeholder="student@university.edu"
-            placeholderTextColor="#64748B"
+            placeholderTextColor={colors.textDisabled}
             autoCapitalize="none"
             keyboardType="email-address"
             value={email}
@@ -67,7 +69,7 @@ export const LoginScreen = ({ navigation }: any) => {
           <TextInput
             style={styles.input}
             placeholder="••••••••"
-            placeholderTextColor="#64748B"
+            placeholderTextColor={colors.textDisabled}
             secureTextEntry
             value={password}
             onChangeText={setPassword}
@@ -91,7 +93,7 @@ export const LoginScreen = ({ navigation }: any) => {
               <Text style={styles.linkText}>Create one</Text>
             </TouchableOpacity>
           </View>
-        </View>
+        </Card>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -100,89 +102,80 @@ export const LoginScreen = ({ navigation }: any) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#090D16",
+    backgroundColor: colors.background,
   },
   innerContainer: {
     flex: 1,
     justifyContent: "center",
-    paddingHorizontal: 24,
+    paddingHorizontal: spacing.xl,
   },
   header: {
-    marginBottom: 32,
+    marginBottom: spacing.xxl,
     alignItems: "center",
   },
   brandTitle: {
-    fontSize: 32,
+    fontSize: 30,
     fontWeight: "800",
-    color: "#6366F1",
-    letterSpacing: 0.5,
+    color: colors.primary,
+    letterSpacing: -0.5,
   },
   subTitle: {
-    fontSize: 14,
-    color: "#94A3B8",
-    marginTop: 6,
+    ...typography.muted,
+    color: colors.textMuted,
+    marginTop: spacing.xs,
   },
   card: {
-    backgroundColor: "#131C2E",
-    borderRadius: 16,
-    padding: 24,
-    borderWidth: 1,
-    borderColor: "#1E293B",
+    padding: spacing.xl,
   },
   cardTitle: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: "#F8FAFC",
-    marginBottom: 20,
+    ...typography.h3,
+    color: colors.textPrimary,
+    marginBottom: spacing.md,
   },
   label: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: "600",
-    color: "#CBD5E1",
-    marginBottom: 8,
-    marginTop: 12,
+    color: colors.textMuted,
+    marginBottom: 6,
+    marginTop: spacing.sm,
   },
   input: {
-    backgroundColor: "#0B111E",
+    backgroundColor: colors.surfaceElevated,
+    borderColor: colors.border,
     borderWidth: 1,
-    borderColor: "#334155",
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    color: "#F8FAFC",
-    fontSize: 15,
+    borderRadius: spacing.radiusSm,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 10,
+    color: colors.textPrimary,
+    fontSize: 14,
   },
   primaryButton: {
-    backgroundColor: "#6366F1",
-    borderRadius: 10,
-    paddingVertical: 14,
+    backgroundColor: colors.primary,
+    borderRadius: spacing.radiusSm,
+    paddingVertical: 12,
     alignItems: "center",
-    marginTop: 24,
-    shadowColor: "#6366F1",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
+    marginTop: spacing.xl,
   },
   disabledButton: {
     opacity: 0.6,
   },
   buttonText: {
     color: "#FFFFFF",
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "700",
   },
   footer: {
     flexDirection: "row",
     justifyContent: "center",
-    marginTop: 20,
+    marginTop: spacing.lg,
   },
   footerText: {
-    color: "#94A3B8",
-    fontSize: 14,
+    color: colors.textMuted,
+    fontSize: 13,
   },
   linkText: {
-    color: "#818CF8",
-    fontSize: 14,
-    fontWeight: "600",
+    color: colors.primaryLight,
+    fontSize: 13,
+    fontWeight: "700",
   },
 });

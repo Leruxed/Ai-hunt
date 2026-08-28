@@ -5,112 +5,205 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
-  ActivityIndicator,
-  Alert,
-  SafeAreaView,
   ScrollView,
+  SafeAreaView,
+  Alert,
+  ActivityIndicator,
 } from "react-native";
 import { api } from "../../api/client";
 import { Resume } from "../../types";
+import { colors, typography, spacing } from "../../theme";
+import { SkillChip } from "../../components/common/SkillChip";
+
+// Skill categorizer utility for clean taxonomy presentation
+const CATEGORY_MAP: Record<string, string[]> = {
+  LANGUAGES: [
+    "Python", "JavaScript", "TypeScript", "Java", "C++", "C#", "Go", "Rust", "PHP", "Ruby", "Swift", "Kotlin", "HTML", "CSS", "SQL"
+  ],
+  FRAMEWORKS: [
+    "FastAPI", "React", "React Native", "Node.js", "Express", "Django", "Flask", "Spring", "Angular", "Vue", "Next.js", "TailwindCSS"
+  ],
+  DATABASES: [
+    "PostgreSQL", "MongoDB", "MySQL", "Redis", "SQLite", "Supabase", "Firebase", "Elasticsearch", "Oracle"
+  ],
+};
 
 export const ResumeReviewScreen = ({ route, navigation }: any) => {
-  const { resume } = route.params as { resume: Resume };
+  const initialResume: Resume = route.params?.resume;
   const [skills, setSkills] = useState<string[]>(
-    resume.parsed_data?.skills || []
+    initialResume?.parsed_data?.skills || []
   );
-  const [newSkill, setNewSkill] = useState("");
+  const [newSkillText, setNewSkillText] = useState("");
   const [saving, setSaving] = useState(false);
 
+  const handleRemoveSkill = (skillToRemove: string) => {
+    setSkills(skills.filter((s) => s.toLowerCase() !== skillToRemove.toLowerCase()));
+  };
+
   const handleAddSkill = () => {
-    if (!newSkill.trim()) return;
-    if (skills.includes(newSkill.trim())) {
-      Alert.alert("Duplicate Skill", "This skill is already in your list.");
+    const trimmed = newSkillText.trim();
+    if (!trimmed) return;
+    if (skills.some((s) => s.toLowerCase() === trimmed.toLowerCase())) {
+      Alert.alert("Notice", "This skill is already included.");
       return;
     }
-    setSkills([...skills, newSkill.trim()]);
-    setNewSkill("");
+    setSkills([...skills, trimmed]);
+    setNewSkillText("");
   };
 
-  const handleRemoveSkill = (skillToRemove: string) => {
-    setSkills(skills.filter((s) => s !== skillToRemove));
-  };
-
-  const handleSaveAndActivate = async () => {
+  const handleSave = async () => {
+    if (!initialResume) return;
     setSaving(true);
     try {
       const updatedParsedData = {
-        ...(resume.parsed_data || {}),
+        ...initialResume.parsed_data,
         skills,
       };
-      await api.updateParsedResume(resume.id, updatedParsedData);
+
+      await api.updateParsedResume(initialResume.id, updatedParsedData);
       Alert.alert(
-        "Resume Activated",
-        "Your skills have been confirmed and active matching is enabled!"
+        "Profile Activated",
+        "Your skills have been verified and your AI match profile is now active!",
+        [
+          {
+            text: "View Matched Opportunities",
+            onPress: () => navigation.navigate("Recommendations"),
+          },
+        ]
       );
-      navigation.navigate("Recommendations");
     } catch (err: any) {
-      Alert.alert("Save Failed", err.message || "Could not update skills.");
+      Alert.alert("Save Error", err.message || "Failed to update skills.");
     } finally {
       setSaving(false);
     }
   };
 
+  // Group skills into category buckets
+  const categorizeSkills = () => {
+    const languages: string[] = [];
+    const frameworks: string[] = [];
+    const databases: string[] = [];
+    const others: string[] = [];
+
+    skills.forEach((s) => {
+      if (CATEGORY_MAP.LANGUAGES.some((c) => c.toLowerCase() === s.toLowerCase())) {
+        languages.push(s);
+      } else if (CATEGORY_MAP.FRAMEWORKS.some((c) => c.toLowerCase() === s.toLowerCase())) {
+        frameworks.push(s);
+      } else if (CATEGORY_MAP.DATABASES.some((c) => c.toLowerCase() === s.toLowerCase())) {
+        databases.push(s);
+      } else {
+        others.push(s);
+      }
+    });
+
+    return { languages, frameworks, databases, others };
+  };
+
+  const categorized = categorizeSkills();
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.content}>
+        {/* Header matching mockup */}
         <View style={styles.header}>
-          <Text style={styles.title}>Verify Extracted Skills</Text>
-          <Text style={styles.subTitle}>
-            Review the skills extracted from your resume. You can add or remove any skills to fine-tune your recommendations.
-          </Text>
+          <Text style={styles.title}>Review your skills</Text>
+          <Text style={styles.subtitle}>Remove anything that's off, add what's missing</Text>
         </View>
 
-        {/* Add Skill Input */}
-        <View style={styles.inputRow}>
+        {/* Group: LANGUAGES */}
+        {categorized.languages.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.categoryHeader}>LANGUAGES</Text>
+            <View style={styles.chipRow}>
+              {categorized.languages.map((skill) => (
+                <SkillChip
+                  key={skill}
+                  label={skill}
+                  onRemove={() => handleRemoveSkill(skill)}
+                />
+              ))}
+            </View>
+          </View>
+        )}
+
+        {/* Group: FRAMEWORKS */}
+        {categorized.frameworks.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.categoryHeader}>FRAMEWORKS</Text>
+            <View style={styles.chipRow}>
+              {categorized.frameworks.map((skill) => (
+                <SkillChip
+                  key={skill}
+                  label={skill}
+                  onRemove={() => handleRemoveSkill(skill)}
+                />
+              ))}
+            </View>
+          </View>
+        )}
+
+        {/* Group: DATABASES */}
+        {categorized.databases.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.categoryHeader}>DATABASES</Text>
+            <View style={styles.chipRow}>
+              {categorized.databases.map((skill) => (
+                <SkillChip
+                  key={skill}
+                  label={skill}
+                  onRemove={() => handleRemoveSkill(skill)}
+                />
+              ))}
+            </View>
+          </View>
+        )}
+
+        {/* Group: TOOLS & OTHER SKILLS */}
+        {categorized.others.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.categoryHeader}>OTHER TOOLS & COMPETENCIES</Text>
+            <View style={styles.chipRow}>
+              {categorized.others.map((skill) => (
+                <SkillChip
+                  key={skill}
+                  label={skill}
+                  onRemove={() => handleRemoveSkill(skill)}
+                />
+              ))}
+            </View>
+          </View>
+        )}
+
+        {/* Add Skill Input matching mockup */}
+        <View style={styles.addSkillContainer}>
+          <Text style={styles.searchIcon}>🔍</Text>
           <TextInput
             style={styles.input}
-            placeholder="e.g., Docker, Next.js, Figma"
-            placeholderTextColor="#64748B"
-            value={newSkill}
-            onChangeText={setNewSkill}
+            placeholder="Add a skill..."
+            placeholderTextColor={colors.textDisabled}
+            value={newSkillText}
+            onChangeText={setNewSkillText}
             onSubmitEditing={handleAddSkill}
+            returnKeyType="done"
           />
-          <TouchableOpacity style={styles.addButton} onPress={handleAddSkill}>
-            <Text style={styles.addButtonText}>Add</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Extracted Skills List */}
-        <Text style={styles.sectionHeader}>Confirmed Skills ({skills.length})</Text>
-        <View style={styles.chipContainer}>
-          {skills.map((skill, index) => (
-            <View key={index} style={styles.chip}>
-              <Text style={styles.chipText}>{skill}</Text>
-              <TouchableOpacity
-                onPress={() => handleRemoveSkill(skill)}
-                style={styles.chipClose}
-              >
-                <Text style={styles.chipCloseText}>✕</Text>
-              </TouchableOpacity>
-            </View>
-          ))}
-          {skills.length === 0 && (
-            <Text style={styles.emptyText}>
-              No skills selected. Please add at least one skill.
-            </Text>
+          {newSkillText.length > 0 && (
+            <TouchableOpacity style={styles.addBtn} onPress={handleAddSkill}>
+              <Text style={styles.addBtnText}>Add</Text>
+            </TouchableOpacity>
           )}
         </View>
 
-        {/* Save and Confirm Button */}
+        {/* Full-width save & activate CTA button */}
         <TouchableOpacity
-          style={[styles.saveButton, saving && styles.disabledButton]}
-          onPress={handleSaveAndActivate}
-          disabled={saving || skills.length === 0}
+          style={[styles.saveButton, saving && styles.saveButtonDisabled]}
+          onPress={handleSave}
+          disabled={saving}
         >
           {saving ? (
             <ActivityIndicator color="#FFFFFF" />
           ) : (
-            <Text style={styles.saveButtonText}>Confirm & Find Matching Jobs</Text>
+            <Text style={styles.saveButtonText}>Save & activate profile</Text>
           )}
         </TouchableOpacity>
       </ScrollView>
@@ -121,119 +214,82 @@ export const ResumeReviewScreen = ({ route, navigation }: any) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#090D16",
+    backgroundColor: colors.background,
   },
   content: {
-    padding: 20,
+    padding: spacing.xl,
   },
   header: {
-    marginBottom: 20,
+    marginBottom: spacing.md,
   },
   title: {
-    fontSize: 24,
-    fontWeight: "800",
-    color: "#F8FAFC",
+    ...typography.h2,
+    color: colors.textPrimary,
   },
-  subTitle: {
-    fontSize: 14,
-    color: "#94A3B8",
-    marginTop: 6,
-    lineHeight: 20,
+  subtitle: {
+    ...typography.muted,
+    color: colors.textMuted,
+    marginTop: spacing.xs,
+    marginBottom: spacing.sm,
   },
-  inputRow: {
+  section: {
+    marginBottom: spacing.sm,
+  },
+  categoryHeader: {
+    ...typography.categoryHeader,
+    color: colors.textMuted,
+    marginBottom: spacing.sm,
+    marginTop: spacing.xs,
+  },
+  chipRow: {
     flexDirection: "row",
-    gap: 10,
-    marginBottom: 24,
+    flexWrap: "wrap",
+  },
+  addSkillContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: colors.surface,
+    borderColor: colors.border,
+    borderWidth: 1,
+    borderRadius: spacing.radiusMd,
+    paddingHorizontal: spacing.md,
+    height: 44,
+    marginTop: spacing.sm,
+    marginBottom: spacing.xl,
+  },
+  searchIcon: {
+    fontSize: 14,
+    marginRight: spacing.sm,
   },
   input: {
     flex: 1,
-    backgroundColor: "#131C2E",
-    borderWidth: 1,
-    borderColor: "#334155",
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    color: "#F8FAFC",
-    fontSize: 15,
-  },
-  addButton: {
-    backgroundColor: "#1E1B4B",
-    borderColor: "#6366F1",
-    borderWidth: 1,
-    paddingHorizontal: 20,
-    justifyContent: "center",
-    borderRadius: 10,
-  },
-  addButtonText: {
-    color: "#A5B4FC",
-    fontWeight: "700",
-    fontSize: 14,
-  },
-  sectionHeader: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#E2E8F0",
-    marginBottom: 12,
-  },
-  chipContainer: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 10,
-    backgroundColor: "#131C2E",
-    padding: 16,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: "#1E293B",
-    minHeight: 120,
-    marginBottom: 24,
-  },
-  chip: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#1E293B",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "#475569",
-  },
-  chipText: {
-    color: "#F8FAFC",
+    color: colors.textPrimary,
     fontSize: 13,
-    fontWeight: "600",
-    marginRight: 6,
   },
-  chipClose: {
-    padding: 2,
+  addBtn: {
+    backgroundColor: colors.primary,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: spacing.radiusSm,
   },
-  chipCloseText: {
-    color: "#94A3B8",
+  addBtnText: {
+    color: "#FFFFFF",
     fontSize: 12,
-    fontWeight: "700",
-  },
-  emptyText: {
-    color: "#64748B",
-    fontSize: 14,
-    marginVertical: 20,
-    textAlign: "center",
-    width: "100%",
+    fontWeight: "600",
   },
   saveButton: {
-    backgroundColor: "#10B981",
-    borderRadius: 12,
-    paddingVertical: 15,
+    backgroundColor: colors.primary,
+    paddingVertical: 12,
+    borderRadius: spacing.radiusMd,
     alignItems: "center",
-    shadowColor: "#10B981",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
+    justifyContent: "center",
   },
-  disabledButton: {
-    opacity: 0.5,
+  saveButtonDisabled: {
+    opacity: 0.65,
   },
   saveButtonText: {
     color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "700",
+    fontSize: 14,
+    fontWeight: "600",
   },
 });
