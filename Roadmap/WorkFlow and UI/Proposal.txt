@@ -1,0 +1,59 @@
+ AI RESUME & JOB/INTERNSHIP MATCHING PLATFORM 
+SkillMatch AI: An Artificial Intelligence-Based Resume Parsing and Job/Internship 
+Matching Platform for Graduating Students 
+Introduction / Background of the Study 
+Every year, graduating and OJT-bound students face the same recurring problem: matching their skills 
+and qualifications to the right job or internship opening. Traditional job hunting relies on students 
+manually browsing listings and recruiters manually screening piles of resumes, a process that is slow, 
+inconsistent, and prone to overlooking qualified candidates simply because a resume was not formatted 
+the way a recruiter expected. 
+SkillMatch AI addresses this by using natural language processing (NLP) to parse resumes, extract 
+structured data such as skills, education, and experience, and match that data against job or internship 
+postings using a similarity-scoring or recommendation model. Instead of a static keyword search, the 
+system ranks and recommends the most relevant opportunities to each student, while giving companies 
+a shortlist of pre-screened, qualified applicants. 
+The project draws directly from the researchers' own OJT experience, where the mismatch between a 
+student's actual skill set and the tasks assigned during internship placement is a recurring and 
+observable problem worth solving with technology. 
+Statement of the Problem 
+The study aims to address the following problems: 
+1. Students often apply to jobs or internships that do not match their actual skill sets, leading to poor 
+placement outcomes and wasted application effort. 
+2. Manual resume screening by recruiters and OJT coordinators is time-consuming and inconsistent, 
+and may overlook qualified applicants due to formatting or keyword mismatches. 
+3. There is no centralized, intelligent platform that both parses a student's resume and actively 
+recommends suitable opportunities based on that data. 
+4. Existing job boards rely on static filters (e.g., location, job title) rather than deeper skill-based 
+matching. 
+Objectives of the Study 
+General Objective: To design, develop, and evaluate an AI-powered web platform that parses student 
+resumes and matches them to relevant job or internship postings using machine learning-based 
+recommendation techniques. 
+Specific Objectives: 
+• To develop a resume upload and parsing module that extracts structured data (skills, education, 
+experience) using NLP techniques. 
+• To design a job/internship posting module for employers or OJT coordinators to list available 
+opportunities. 
+• To implement a matching or recommendation algorithm that scores and ranks opportunities based 
+on resume-to-posting similarity. 
+• To build a dashboard for students to track applications and for employers to view ranked, 
+shortlisted candidates. 
+• To evaluate the accuracy and relevance of the AI matching results against manual screening as a 
+baseline. 
+Scope and Limitations 
+The system will support resume upload (PDF/DOCX), automated parsing, job/internship posting 
+management, and AI-based matching and ranking. It will be limited to text-based resume data (not 
+scanned images without OCR), a defined and pre-agreed set of skill/keyword categories, and a 
+moderate-sized pilot dataset of job postings and student resumes (e.g., partnering with the school's OJT 
+office). The study will not cover payroll, contract management, or legal hiring compliance features, and 
+initial matching accuracy will be based on a proof-of-concept model rather than production-scale 
+training data. 
+Significance of the Study 
+• Students: Receive personalized, ranked job/internship recommendations instead of manually sifting 
+through listings. 
+• Employers / OJT Coordinators: Save time by receiving a pre-screened, ranked shortlist of qualified 
+applicants. 
+• School / OJT Office: Gains a tool to better track placement outcomes and skill-job alignment across 
+cohorts. 
+• Future Researchers: Provides a working baseline and dataset structure for future resume-matching 
+or HR-tech studies.

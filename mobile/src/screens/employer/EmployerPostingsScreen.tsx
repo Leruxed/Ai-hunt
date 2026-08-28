@@ -14,6 +14,7 @@ import {
   RefreshControl,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
+import { useAuth } from "../../store/authContext";
 import { api } from "../../api/client";
 import { JobPosting, JobType } from "../../types";
 import { colors, typography, spacing } from "../../theme";
@@ -21,6 +22,7 @@ import { Card } from "../../components/common/Card";
 
 export const EmployerPostingsScreen = () => {
   const navigation = useNavigation<any>();
+  const { logout } = useAuth();
   const [postings, setPostings] = useState<JobPosting[]>([]);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -55,6 +57,17 @@ export const EmployerPostingsScreen = () => {
   useEffect(() => {
     fetchPostings();
   }, []);
+
+  const handleLogout = () => {
+    Alert.alert("Log Out", "Are you sure you want to log out of your employer account?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Log Out",
+        style: "destructive",
+        onPress: logout,
+      },
+    ]);
+  };
 
   const handleCreatePosting = async () => {
     if (!title.trim() || !description.trim()) {
@@ -154,18 +167,26 @@ export const EmployerPostingsScreen = () => {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <View style={styles.titleRow}>
-          <View>
+          <View style={styles.headerTextContainer}>
             <Text style={styles.headerTitle}>Job Postings</Text>
             <Text style={styles.headerSubtitle}>
-              Manage active listings and review candidate pools
+              Manage active listings and applicant pipelines
             </Text>
           </View>
-          <TouchableOpacity
-            style={styles.createBtn}
-            onPress={() => setModalVisible(true)}
-          >
-            <Text style={styles.createBtnText}>+ New Job</Text>
-          </TouchableOpacity>
+          <View style={styles.headerActions}>
+            <TouchableOpacity
+              style={styles.logoutBtn}
+              onPress={handleLogout}
+            >
+              <Text style={styles.logoutBtnText}>Log Out</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.createBtn}
+              onPress={() => setModalVisible(true)}
+            >
+              <Text style={styles.createBtnText}>+ New Job</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
 
@@ -323,6 +344,10 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
   },
+  headerTextContainer: {
+    flex: 1,
+    marginRight: spacing.sm,
+  },
   headerTitle: {
     ...typography.h2,
     color: colors.textPrimary,
@@ -331,6 +356,24 @@ const styles = StyleSheet.create({
     ...typography.muted,
     color: colors.textMuted,
     marginTop: 2,
+  },
+  headerActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  logoutBtn: {
+    backgroundColor: "rgba(239, 68, 68, 0.12)",
+    borderColor: "rgba(239, 68, 68, 0.4)",
+    borderWidth: 1,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    borderRadius: spacing.radiusMd,
+  },
+  logoutBtnText: {
+    color: colors.danger,
+    fontSize: 12,
+    fontWeight: "700",
   },
   createBtn: {
     backgroundColor: colors.primary,
